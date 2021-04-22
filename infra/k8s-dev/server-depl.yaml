@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dno-server-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dno-server
+  template:
+    metadata:
+      labels:
+        app: dno-server
+    spec:
+      containers:
+        - name: dno-server
+          image: dnoshopapp/dno-server
+          env:
+            - name: POSTGRES_URI
+              value: 'postgresql://postgres@postgres-srv:5432/dnodb'
+            - name: JWT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: JWT_KEY
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dno-server-srv
+spec:
+  selector:
+    app: dno-server
+  ports:
+    - name: dno-server
+      protocol: TCP
+      port: 3000
+      targetPort: 3000
