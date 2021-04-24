@@ -1,10 +1,5 @@
-import { db } from '../../db/db';
+import { db, DatabaseResponseObject } from '../../db/db';
 import { Router } from 'express';
-
-// Describes the shape of data that is returned by node-postgres library
-interface DatabaseResponseObject {
-  [key: string]: number | string;
-}
 
 const router = Router();
 

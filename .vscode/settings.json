@@ -3,6 +3,10 @@
     "currentuser",
     "datname",
     "dnodb",
-    "ossp"
+    "ossp",
+    "scrypt",
+    "signin",
+    "signup",
+    "smth"
   ]
 }

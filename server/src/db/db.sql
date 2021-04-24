@@ -1,7 +1,7 @@
 CREATE DATABASE dnodb;
 CREATE EXTENSION "uuid-ossp";
 CREATE TABLE users (
-  user_email VARCHAR(150) NOT NULL UNIQUE PRIMARY KEY,
+  user_email VARCHAR(100) NOT NULL UNIQUE PRIMARY KEY,
   user_password VARCHAR(255) NOT NULL,
   user_phone INT UNIQUE,
   user_first_name VARCHAR(50) NOT NULL,

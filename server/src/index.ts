@@ -5,6 +5,7 @@ import { getCurrentUser } from './middleware/get-current-user';
 import { errorHandler } from './middleware/error-handler';
 import { NotFoundError } from './errors/not-found-error';
 import { currentUserRouter } from './routes/auth/current-user';
+import { signupRouter } from './routes/auth/signup';
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(express.json());
 app.use(getCurrentUser);
 
 app.use(currentUserRouter);
+app.use(signupRouter);
 
 app.all('*', async (req, res, next) => {
   next(new NotFoundError());

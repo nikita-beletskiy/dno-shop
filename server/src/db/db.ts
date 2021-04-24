@@ -7,3 +7,8 @@ export const db = {
   query: (text: String, params?: any) =>
     pool.query({ text } as QueryArrayConfig, params)
 };
+
+// Describes the shape of data that is returned by node-postgres library
+export interface DatabaseResponseObject {
+  [key: string]: number | string | null;
+}
