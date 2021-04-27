@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 
 // Describes the data expected out of 'jwt.verify()'. Because email was initially encrypted, now it is in fact expected
 interface UserPayload {
-  user_email: string;
+  email: string;
 }
 
 declare global {

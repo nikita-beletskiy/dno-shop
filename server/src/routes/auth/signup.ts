@@ -3,6 +3,7 @@ import { Router, Request, Response } from 'express';
 import { body } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import { validateRequest } from '../../middleware/validate-request';
+import { Password } from '../../services/password';
 
 const router = Router();
 router.post(
@@ -17,7 +18,7 @@ router.post(
       .withMessage(`Oh come on, you're too complicated...`)
       .custom(async email => {
         if (
-          (await db.query(`SELECT * FROM users WHERE user_email = $1`, [email]))
+          (await db.query(`SELECT * FROM users WHERE email = $1`, [email]))
             .rows[0]
         )
           // Throwing this generic error because validateRequest middleware will set all appropriate errors eventually
@@ -49,16 +50,13 @@ router.post(
 
     const savedUser = ((
       await db.query(
-        `INSERT INTO users (user_email, user_password, user_first_name, user_nickname) VALUES ($1, $2, $3, $3) RETURNING *`,
-        [email, password, firstName]
+        `INSERT INTO users (email, password, firstName, nickname) VALUES ($1, $2, $3, $3) RETURNING *`,
+        [email, await Password.toHash(password), firstName]
       )
     ).rows[0] as unknown) as DatabaseResponseObject;
 
     // Generate JWT - payload as a first argument and a signing key as the second
-    const userJwt = jwt.sign(
-      { user_email: savedUser.user_email },
-      process.env.JWT_KEY!
-    );
+    const userJwt = jwt.sign({ email: savedUser.email }, process.env.JWT_KEY!);
 
     // Store JWT on req.session object that is created by cookie-session library. This object's data will be stored inside a cookie
     req.session = { jwt: userJwt };

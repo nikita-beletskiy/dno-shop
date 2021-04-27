@@ -7,8 +7,8 @@ const router = Router();
 router.get('/api/users/currentuser', async (req, res) => {
   // If there is some cookie set on a client, but there is no corresponding user in DB (e.g. after DB restart) currentUser will be undefined
   const fetchedUser = ((
-    await db.query(`SELECT * FROM users WHERE user_email = $1`, [
-      req.currentUser?.user_email
+    await db.query(`SELECT * FROM users WHERE email = $1`, [
+      req.currentUser?.email
     ])
   ).rows[0] as unknown) as DatabaseResponseObject;
 
@@ -16,7 +16,7 @@ router.get('/api/users/currentuser', async (req, res) => {
     ? res.send({
         // Here I get an array of fetchedUser object keys and filter it to exclude 'user_password' key. Then I invoke reduce() method on filtered array and create a new object out of its values
         currentUser: Object.keys(fetchedUser)
-          .filter(key => key !== 'user_password')
+          .filter(key => key !== 'password')
           .reduce((obj: DatabaseResponseObject, key) => {
             obj[key] = fetchedUser[key];
             return obj;
