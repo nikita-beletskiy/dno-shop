@@ -61,7 +61,15 @@ router.post(
     // Store JWT on req.session object that is created by cookie-session library. This object's data will be stored inside a cookie
     req.session = { jwt: userJwt };
 
-    res.status(201).send(savedUser);
+    // Sending user object the same way as in currentUser route handler
+    res.status(201).send(
+      Object.keys(savedUser)
+        .filter(key => key !== 'password')
+        .reduce((obj: DatabaseResponseObject, key) => {
+          obj[key] = savedUser[key];
+          return obj;
+        }, {})
+    );
   }
 );
 

@@ -47,7 +47,15 @@ router.post(
 
     req.session = { jwt: userJwt };
 
-    res.status(200).send(existingUser);
+    // Sending user object the same way as in currentUser route handler
+    res.status(200).send(
+      Object.keys(existingUser)
+        .filter(key => key !== 'password')
+        .reduce((obj: DatabaseResponseObject, key) => {
+          obj[key] = existingUser[key];
+          return obj;
+        }, {})
+    );
   }
 );
 
