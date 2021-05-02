@@ -8,11 +8,8 @@ export const requireAuth = async (
   next: NextFunction
 ) => {
   !req.currentUser ||
-  !(
-    await db.query(`SELECT * FROM users WHERE email = $1`, [
-      req.currentUser?.email
-    ])
-  ).rows[0]
+  !(await db.query(`SELECT * FROM users WHERE id = $1`, [req.currentUser?.id]))
+    .rows[0]
     ? next(
         new NotAuthorizedError(
           `Whatever you're trying to access - first log in properly, please`

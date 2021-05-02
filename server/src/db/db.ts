@@ -12,3 +12,18 @@ export const db = {
 export interface DatabaseResponseObject {
   [key: string]: number | string | null;
 }
+
+export enum UserColumns {
+  id = 'id',
+  email = 'email',
+  password = 'password',
+  phone = 'phone',
+  firstName = 'firstName',
+  lastName = 'lastName',
+  nickname = 'nickname',
+  image = 'image',
+  gender = 'gender',
+  dateOfBirth = 'dateOfBirth',
+  wishlist = 'wishlist',
+  cart = 'cart'
+}

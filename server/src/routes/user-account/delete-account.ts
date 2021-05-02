@@ -9,9 +9,7 @@ router.delete(
   requireAuth,
   validateRequest, // Custom middleware that will inspect 'req' object after 'body' function checked it for incorrect data and possibly set some errors on it
   async (req: Request, res: Response) => {
-    await db.query(`DELETE FROM users WHERE email = $1`, [
-      req.currentUser?.email
-    ]);
+    await db.query(`DELETE FROM users WHERE id = $1`, [req.currentUser?.id]);
 
     res.end();
   }

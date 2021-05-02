@@ -1,4 +1,4 @@
-import { db, DatabaseResponseObject } from '../../db/db';
+import { db, DatabaseResponseObject, UserColumns } from '../../db/db';
 import { Router, Request, Response } from 'express';
 import { body } from 'express-validator';
 import jwt from 'jsonwebtoken';
@@ -18,7 +18,7 @@ router.post(
       .withMessage(`Oh come on, you're too complicated...`)
       .custom(async email => {
         if (
-          (await db.query(`SELECT * FROM users WHERE email = $1`, [email]))
+          (await db.query(`SELECT email FROM users WHERE email = $1`, [email]))
             .rows[0]
         )
           // Throwing this generic error because validateRequest middleware will set all appropriate errors eventually
@@ -32,44 +32,49 @@ router.post(
       .withMessage(
         `You are not so worthless, trust me. Let's try set a better password`
       )
-      .isLength({ max: 255 })
+      .isLength({ max: 128 })
       .withMessage(`It's too big even for me...`),
     body('firstName')
       .isLength({ min: 2 })
       .withMessage(`Don't get me wrong, but it's too short...`)
       .isLength({ max: 50 })
       .withMessage(
-        `Don't think I can memorize this... How about settle on simply John?)`
+        `Don't think I can memorize this... How about settle on simply John or Jane?)`
+      )
+      .matches(/^[A-z А-я]+$/, 'g')
+      .withMessage('Jeez! Are you some kind of robot or smth?'),
+    body('lastName')
+      .isLength({ min: 2 })
+      .withMessage(`Don't get me wrong, but it's too short...`)
+      .isLength({ max: 50 })
+      .withMessage(
+        `Don't think I can memorize this... How about settle on simply Doe?)`
       )
       .matches(/^[A-z А-я]+$/, 'g')
       .withMessage('Jeez! Are you some kind of robot or smth?')
   ],
   validateRequest, // Custom middleware that will inspect 'req' object after 'body' function checked it for incorrect data and possibly set some errors on it
   async (req: Request, res: Response) => {
-    const { email, password, firstName } = req.body;
+    const { email, password, firstName, lastName } = req.body;
+
+    const columns = Object.keys(UserColumns)
+      .filter(attr => attr !== UserColumns.password)
+      .join();
 
     const savedUser = ((
       await db.query(
-        `INSERT INTO users (email, password, firstName, nickname) VALUES ($1, $2, $3, $3) RETURNING *`,
-        [email, await Password.toHash(password), firstName]
+        `INSERT INTO users (id, email, password, firstName, lastName) VALUES (uuid_generate_v4(), $1, $2, $3, $4) RETURNING ${columns}`,
+        [email, await Password.toHash(password), firstName, lastName]
       )
     ).rows[0] as unknown) as DatabaseResponseObject;
 
     // Generate JWT - payload as a first argument and a signing key as the second
-    const userJwt = jwt.sign({ email: savedUser.email }, process.env.JWT_KEY!);
+    const userJwt = jwt.sign({ id: savedUser.id }, process.env.JWT_KEY!);
 
     // Store JWT on req.session object that is created by cookie-session library. This object's data will be stored inside a cookie
     req.session = { jwt: userJwt };
 
-    // Sending user object the same way as in currentUser route handler
-    res.status(201).send(
-      Object.keys(savedUser)
-        .filter(key => key !== 'password')
-        .reduce((obj: DatabaseResponseObject, key) => {
-          obj[key] = savedUser[key];
-          return obj;
-        }, {})
-    );
+    res.status(201).send(savedUser);
   }
 );
 

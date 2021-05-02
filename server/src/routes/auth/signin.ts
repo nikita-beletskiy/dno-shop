@@ -40,14 +40,11 @@ router.post(
     if (!passwordsMatch)
       return next(new BadRequestError('Check your password', 'password'));
 
-    const userJwt = jwt.sign(
-      { id: existingUser.id, email: existingUser.email },
-      process.env.JWT_KEY!
-    );
+    const userJwt = jwt.sign({ id: existingUser.id }, process.env.JWT_KEY!);
 
     req.session = { jwt: userJwt };
 
-    // Sending user object the same way as in currentUser route handler
+    // Here I get an array of fetchedUser object keys and filter it to exclude 'user_password' key. Then I invoke reduce() method on filtered array and create a new object out of its values
     res.status(200).send(
       Object.keys(existingUser)
         .filter(key => key !== 'password')
