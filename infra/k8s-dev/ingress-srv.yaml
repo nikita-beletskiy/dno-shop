@@ -14,3 +14,7 @@ spec:
             backend:
               serviceName: dno-server-srv
               servicePort: 3000
+          - path: /api/products/?(.*)
+            backend:
+              serviceName: dno-server-srv
+              servicePort: 3000

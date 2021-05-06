@@ -9,34 +9,20 @@ router.patch(
   '/api/users/currentuser/update',
   requireAuth,
   [
-    body(UserColumns.email)
+    body('email')
       .optional()
       .isEmail()
       .withMessage(`Nah, to ugly email, yours is better`)
       .isLength({ max: 100 })
-      .withMessage(`Oh come on, you're too complicated...`)
-      .custom(async (email, { req }) => {
-        if (
-          (
-            await db.query(
-              `SELECT id FROM users WHERE email = $1 AND id NOT IN ($2)`,
-              [email, req.currentUser.id]
-            )
-          ).rows[0]
-        )
-          // Throwing this generic error because validateRequest middleware will set all appropriate errors eventually
-          throw new Error(
-            `We already have someone with this email. Is it you?`
-          );
-      }),
-    body(UserColumns.password)
+      .withMessage(`Oh come on, you're too complicated...`),
+    body('password')
       .optional()
       .trim()
       .isLength({ min: 8 })
       .withMessage(`You shrunk it too much. Let's try set a better password`)
       .isLength({ max: 128 })
       .withMessage(`It's too big even for me...`),
-    body(UserColumns.firstName)
+    body('firstName')
       .optional()
       .isLength({ min: 2 })
       .withMessage(`Don't get me wrong, but it's too short...`)
@@ -46,7 +32,7 @@ router.patch(
       )
       .matches(/^[A-z А-я]+$/, 'g')
       .withMessage('Jeez! Are you some kind of robot or smth?'),
-    body(UserColumns.lastName)
+    body('lastName')
       .optional()
       .isLength({ min: 2 })
       .withMessage(`Don't get me wrong, but it's too short...`)
@@ -54,7 +40,7 @@ router.patch(
       .withMessage(`What is it? Unfortunate wedding?`)
       .matches(/^[A-z А-я]+$/, 'g')
       .withMessage('Jeez! Why did you marry a webserver?'),
-    body(UserColumns.nickname)
+    body('nickname')
       .optional()
       .isLength({ min: 2 })
       .withMessage(`Tooooo simple, even for a nickname`)
@@ -65,39 +51,39 @@ router.patch(
       .matches(/^[A-zА-я-_]+$/, 'g')
       .withMessage(
         'Only dashes and underscores are allowed, if you wanna spice it up. And no spaces either, btw'
-      )
-      .custom(async (nickname, { req }) => {
-        if (
-          (
-            await db.query(
-              `SELECT nickname FROM users WHERE nickname = $1 AND id NOT IN ($2)`,
-              [nickname, req.currentUser.id]
-            )
-          ).rows[0]
-        )
-          throw new Error(`Somebody took this already... I'm sorry`);
-      }),
-    body(UserColumns.phone)
+      ),
+    body('phone')
       .optional()
       .matches(/^[0-9]{10}$/, 'g')
       .withMessage(
         'What a nasty hacker) look at that)) Stop doing this and enter your real phone number. Or get out'
       )
-      .custom(async (phone, { req }) => {
+  ],
+  validateRequest, // Custom middleware that will inspect 'req' object after 'body' function checked it for incorrect data and possibly set some errors on it
+  [
+    // This validation step involves DB query, so it'll be made only after previous validation steps were completed without issues, which guarantees that the query will be made with 100% valid data so it won't be wasteful
+    body(['email', 'nickname', 'phone']).custom(
+      async (value, { req, path }) => {
         if (
+          // Doesn't handle db connection errors (probably express validator bug)
           (
             await db.query(
-              `SELECT phone FROM users WHERE phone = $1 AND id NOT IN ($2)`,
-              [phone, req.currentUser.id]
+              `SELECT ${path} FROM users WHERE ${path} = $1 AND id NOT IN ($2)`,
+              [value, req.currentUser.id]
             )
           ).rows[0]
         )
           throw new Error(
-            `We already have someone with this phone. Is it you?`
+            path === 'email'
+              ? `We already have someone with this email. Is it you?`
+              : path === 'nickname'
+              ? `Somebody took this already... I'm sorry`
+              : `We already have someone with this phone. Is it you?`
           );
-      })
+      }
+    )
   ],
-  validateRequest, // Custom middleware that will inspect 'req' object after 'body' function checked it for incorrect data and possibly set some errors on it
+  validateRequest,
   async (req: Request, res: Response) => {
     const columns = Object.keys(req.body)
       .reduce((params: any, currentParam) => {

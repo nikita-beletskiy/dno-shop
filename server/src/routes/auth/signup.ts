@@ -1,6 +1,6 @@
 import { db, DatabaseResponseObject, UserColumns } from '../../db/db';
-import { Router, Request, Response } from 'express';
-import { body } from 'express-validator';
+import { Router, Request, Response, NextFunction } from 'express';
+import { body, validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import { validateRequest } from '../../middleware/validate-request';
 import { Password } from '../../services/password';
@@ -15,17 +15,7 @@ router.post(
         `I'm not as stupid as you might think) Please enter your real email`
       )
       .isLength({ max: 100 })
-      .withMessage(`Oh come on, you're too complicated...`)
-      .custom(async email => {
-        if (
-          (await db.query(`SELECT email FROM users WHERE email = $1`, [email]))
-            .rows[0]
-        )
-          // Throwing this generic error because validateRequest middleware will set all appropriate errors eventually
-          throw new Error(
-            `You forgot you're already in the club, buddy) Go sign in and have fun`
-          );
-      }),
+      .withMessage(`Oh come on, you're too complicated...`),
     body('password')
       .trim()
       .isLength({ min: 8 })
@@ -54,27 +44,44 @@ router.post(
       .withMessage('Jeez! Are you some kind of robot or smth?')
   ],
   validateRequest, // Custom middleware that will inspect 'req' object after 'body' function checked it for incorrect data and possibly set some errors on it
-  async (req: Request, res: Response) => {
+  [
+    // This validation step involves DB query, so it'll be made only after previous validation steps were completed without issues, which guarantees that the query will be made with 100% valid data so it won't be wasteful
+    body('email').custom(async email => {
+      if (
+        // DB connection error is handled automatically
+        (await db.query(`SELECT id FROM users WHERE email = $1`, [email]))
+          .rows[0]
+      )
+        // Throwing this generic error because validateRequest middleware will set all appropriate errors eventually
+        throw new Error(
+          `You forgot you're already in the club, buddy) Go sign in and have fun`
+        );
+    })
+  ],
+  validateRequest,
+  async (req: Request, res: Response, next: NextFunction) => {
     const { email, password, firstName, lastName } = req.body;
 
     const columns = Object.keys(UserColumns)
       .filter(attr => attr !== UserColumns.password)
       .join();
 
-    const savedUser = ((
-      await db.query(
-        `INSERT INTO users (id, email, password, firstName, lastName) VALUES (uuid_generate_v4(), $1, $2, $3, $4) RETURNING ${columns}`,
-        [email, await Password.toHash(password), firstName, lastName]
-      )
-    ).rows[0] as unknown) as DatabaseResponseObject;
+    db.query(
+      `INSERT INTO users (id, email, password, firstName, lastName) VALUES (uuid_generate_v4(), $1, $2, $3, $4) RETURNING ${columns}`,
+      [email, await Password.toHash(password), firstName, lastName]
+    )
+      .then(result => {
+        req.session = {
+          // Generate JWT and store it on req.session object that is created by cookie-session library. This object's data will be stored inside a cookie
+          jwt: jwt.sign(
+            { id: ((result.rows[0] as unknown) as DatabaseResponseObject).id },
+            process.env.JWT_KEY!
+          )
+        };
 
-    // Generate JWT - payload as a first argument and a signing key as the second
-    const userJwt = jwt.sign({ id: savedUser.id }, process.env.JWT_KEY!);
-
-    // Store JWT on req.session object that is created by cookie-session library. This object's data will be stored inside a cookie
-    req.session = { jwt: userJwt };
-
-    res.status(201).send(savedUser);
+        res.send(result.rows[0]);
+      })
+      .catch(err => next(new Error(err.message)));
   }
 );
 

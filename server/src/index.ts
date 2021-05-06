@@ -1,15 +1,20 @@
 import { db } from './db/db';
 import express from 'express';
 import cookieSession from 'cookie-session';
+
 import { getCurrentUser } from './middleware/get-current-user';
 import { errorHandler } from './middleware/error-handler';
+
 import { NotFoundError } from './errors/not-found-error';
+
 import { currentUserRouter } from './routes/auth/current-user';
 import { signupRouter } from './routes/auth/signup';
 import { signinRouter } from './routes/auth/signin';
 import { signoutRouter } from './routes/auth/signout';
 import { deleteAccountRouter } from './routes/user-account/delete-account';
 import { updateAccountRouter } from './routes/user-account/update';
+import { getOneProductRouter } from './routes/products/get-one';
+import { getAllProductsRouter } from './routes/products/get-all';
 
 const app = express();
 
@@ -25,6 +30,8 @@ app.use(signinRouter);
 app.use(signoutRouter);
 app.use(deleteAccountRouter);
 app.use(updateAccountRouter);
+app.use(getOneProductRouter);
+app.use(getAllProductsRouter);
 
 app.all('*', async (req, res, next) => {
   next(new NotFoundError());

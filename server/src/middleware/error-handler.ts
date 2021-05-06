@@ -13,6 +13,6 @@ export const errorHandler = (
         .send({ error_type: 'handled', errors: err.getErrors() })
     : res.status(400).send({
         error_type: 'unhandled',
-        errors: [{ message: 'Something went wrong' }]
+        errors: [{ message: 'Something went wrong', description: err.message }]
       });
 };

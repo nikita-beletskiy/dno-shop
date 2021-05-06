@@ -19,40 +19,47 @@ router.post(
     body('password').trim().notEmpty().withMessage(`Really?)`)
   ],
   validateRequest,
-  async (req: Request, res: Response, next: NextFunction) => {
+  (req: Request, res: Response, next: NextFunction) => {
     const { email, password } = req.body;
 
-    const existingUser = ((
-      await db.query(`SELECT * FROM users WHERE email = $1`, [email])
-    ).rows[0] as unknown) as DatabaseResponseObject;
-    if (!existingUser)
-      return next(
-        new BadRequestError(
-          `Looks like you're not yet in the club, buddy) We're so glad to see you, but go sign up first`,
-          'email'
+    db.query(`SELECT * FROM users WHERE email = $1`, [email])
+      .then(async result => {
+        const fetchedUser = (result
+          .rows[0] as unknown) as DatabaseResponseObject;
+
+        if (!fetchedUser)
+          return next(
+            new BadRequestError(
+              `Looks like you're not yet in the club, buddy) We're so glad to see you, but go sign up first`,
+              'email'
+            )
+          );
+        else if (
+          !(await Password.compare(fetchedUser.password as string, password))
         )
-      );
+          return next(new BadRequestError('Check your password', 'password'));
+        else {
+          req.session = {
+            jwt: jwt.sign(
+              {
+                id: fetchedUser.id
+              },
+              process.env.JWT_KEY!
+            )
+          };
 
-    const passwordsMatch = await Password.compare(
-      existingUser.password as string,
-      password
-    );
-    if (!passwordsMatch)
-      return next(new BadRequestError('Check your password', 'password'));
-
-    const userJwt = jwt.sign({ id: existingUser.id }, process.env.JWT_KEY!);
-
-    req.session = { jwt: userJwt };
-
-    // Here I get an array of fetchedUser object keys and filter it to exclude 'user_password' key. Then I invoke reduce() method on filtered array and create a new object out of its values
-    res.status(200).send(
-      Object.keys(existingUser)
-        .filter(key => key !== 'password')
-        .reduce((obj: DatabaseResponseObject, key) => {
-          obj[key] = existingUser[key];
-          return obj;
-        }, {})
-    );
+          // Here I get an array of fetchedUser object keys and filter it to exclude 'user_password' key. Then I invoke reduce() method on filtered array and create a new object out of its values
+          res.send(
+            Object.keys(fetchedUser)
+              .filter(key => key !== 'password')
+              .reduce((obj: DatabaseResponseObject, key) => {
+                obj[key] = fetchedUser[key];
+                return obj;
+              }, {})
+          );
+        }
+      })
+      .catch(err => next(new Error(err.message)));
   }
 );
 
