@@ -6,11 +6,11 @@ CREATE TABLE users (
   id UUID NOT NULL PRIMARY KEY,
   email VARCHAR(100) NOT NULL UNIQUE,
   password TEXT NOT NULL,
-  firstName VARCHAR(50) NOT NULL,
-  lastName VARCHAR(50) NOT NULL,
+  first_name VARCHAR(50) NOT NULL,
+  last_name VARCHAR(50) NOT NULL,
   nickname VARCHAR(20) UNIQUE,
   phone VARCHAR(10) UNIQUE,
-  dateOfBirth DATE,
+  date_of_birth DATE,
   gender VARCHAR(6),
   image TEXT,
   wishlist VARCHAR(36) [],
@@ -20,8 +20,8 @@ INSERT INTO users (
     id,
     email,
     password,
-    firstName,
-    lastName
+    first_name,
+    last_name
   )
 VALUES (
     uuid_generate_v4(),

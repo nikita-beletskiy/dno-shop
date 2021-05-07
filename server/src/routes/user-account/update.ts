@@ -1,5 +1,5 @@
 import { db, UserColumns } from '../../db/db';
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { body } from 'express-validator';
 import { validateRequest } from '../../middleware/validate-request';
 import { requireAuth } from '../../middleware/require-auth';
@@ -22,7 +22,7 @@ router.patch(
       .withMessage(`You shrunk it too much. Let's try set a better password`)
       .isLength({ max: 128 })
       .withMessage(`It's too big even for me...`),
-    body('firstName')
+    body('first_name')
       .optional()
       .isLength({ min: 2 })
       .withMessage(`Don't get me wrong, but it's too short...`)
@@ -32,7 +32,7 @@ router.patch(
       )
       .matches(/^[A-z А-я]+$/, 'g')
       .withMessage('Jeez! Are you some kind of robot or smth?'),
-    body('lastName')
+    body('last_name')
       .optional()
       .isLength({ min: 2 })
       .withMessage(`Don't get me wrong, but it's too short...`)
@@ -84,7 +84,7 @@ router.patch(
     )
   ],
   validateRequest,
-  async (req: Request, res: Response) => {
+  (req: Request, res: Response, next: NextFunction) => {
     const columns = Object.keys(req.body)
       .reduce((params: any, currentParam) => {
         params.push(`${currentParam} = '${req.body[currentParam]}'`);
@@ -92,18 +92,16 @@ router.patch(
       }, [])
       .join();
 
-    const updatedUser = (
-      await db.query(
-        `UPDATE users SET ${columns} WHERE id = $1 RETURNING ${Object.keys(
-          UserColumns
-        )
-          .filter(attr => attr !== UserColumns.password)
-          .join()}`,
-        [req.currentUser?.id]
+    db.query(
+      `UPDATE users SET ${columns} WHERE id = $1 RETURNING ${Object.keys(
+        UserColumns
       )
-    ).rows[0];
-
-    res.send(updatedUser);
+        .filter(attr => attr !== UserColumns.password)
+        .join()}`,
+      [req.currentUser?.id]
+    )
+      .then(result => res.send(result.rows[0]))
+      .catch(err => next(new Error(err.message)));
   }
 );
 

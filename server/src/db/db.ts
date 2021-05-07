@@ -18,12 +18,12 @@ export enum UserColumns {
   email = 'email',
   password = 'password',
   phone = 'phone',
-  firstName = 'firstName',
-  lastName = 'lastName',
+  first_name = 'first_name',
+  last_name = 'last_name',
   nickname = 'nickname',
   image = 'image',
   gender = 'gender',
-  dateOfBirth = 'dateOfBirth',
+  date_of_birth = 'date_of_birth',
   wishlist = 'wishlist',
   cart = 'cart'
 }

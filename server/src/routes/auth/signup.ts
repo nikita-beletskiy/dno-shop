@@ -24,7 +24,7 @@ router.post(
       )
       .isLength({ max: 128 })
       .withMessage(`It's too big even for me...`),
-    body('firstName')
+    body('first_name')
       .isLength({ min: 2 })
       .withMessage(`Don't get me wrong, but it's too short...`)
       .isLength({ max: 50 })
@@ -33,7 +33,7 @@ router.post(
       )
       .matches(/^[A-z А-я]+$/, 'g')
       .withMessage('Jeez! Are you some kind of robot or smth?'),
-    body('lastName')
+    body('last_name')
       .isLength({ min: 2 })
       .withMessage(`Don't get me wrong, but it's too short...`)
       .isLength({ max: 50 })
@@ -60,15 +60,15 @@ router.post(
   ],
   validateRequest,
   async (req: Request, res: Response, next: NextFunction) => {
-    const { email, password, firstName, lastName } = req.body;
+    const { email, password, first_name, last_name } = req.body;
 
     const columns = Object.keys(UserColumns)
       .filter(attr => attr !== UserColumns.password)
       .join();
 
     db.query(
-      `INSERT INTO users (id, email, password, firstName, lastName) VALUES (uuid_generate_v4(), $1, $2, $3, $4) RETURNING ${columns}`,
-      [email, await Password.toHash(password), firstName, lastName]
+      `INSERT INTO users (id, email, password, first_name, last_name) VALUES (uuid_generate_v4(), $1, $2, $3, $4) RETURNING ${columns}`,
+      [email, await Password.toHash(password), first_name, last_name]
     )
       .then(result => {
         req.session = {
