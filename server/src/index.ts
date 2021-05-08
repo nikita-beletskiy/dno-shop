@@ -15,6 +15,7 @@ import { deleteAccountRouter } from './routes/user-account/delete-account';
 import { updateAccountRouter } from './routes/user-account/update';
 import { getOneProductRouter } from './routes/products/get-one';
 import { getAllProductsRouter } from './routes/products/get-all';
+import { updateProductsRouter } from './routes/user-account/update-products';
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use(deleteAccountRouter);
 app.use(updateAccountRouter);
 app.use(getOneProductRouter);
 app.use(getAllProductsRouter);
+app.use(updateProductsRouter);
 
 app.all('*', async (req, res, next) => {
   next(new NotFoundError());

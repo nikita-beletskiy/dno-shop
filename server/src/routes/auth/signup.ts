@@ -1,6 +1,6 @@
 import { db, DatabaseResponseObject, UserColumns } from '../../db/db';
 import { Router, Request, Response, NextFunction } from 'express';
-import { body, validationResult } from 'express-validator';
+import { body } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import { validateRequest } from '../../middleware/validate-request';
 import { Password } from '../../services/password';

@@ -65,7 +65,6 @@ router.patch(
     body(['email', 'nickname', 'phone']).custom(
       async (value, { req, path }) => {
         if (
-          // Doesn't handle db connection errors (probably express validator bug)
           (
             await db.query(
               `SELECT ${path} FROM users WHERE ${path} = $1 AND id NOT IN ($2)`,
@@ -86,7 +85,7 @@ router.patch(
   validateRequest,
   (req: Request, res: Response, next: NextFunction) => {
     const columns = Object.keys(req.body)
-      .reduce((params: any, currentParam) => {
+      .reduce((params: string[], currentParam) => {
         params.push(`${currentParam} = '${req.body[currentParam]}'`);
         return params;
       }, [])

@@ -13,22 +13,26 @@ CREATE TABLE users (
   date_of_birth DATE,
   gender VARCHAR(6),
   image TEXT,
-  wishlist VARCHAR(36) [],
-  cart VARCHAR(36) []
+  wishlist UUID [] DEFAULT ARRAY []::UUID [],
+  cart UUID [] DEFAULT ARRAY []::UUID []
 );
 INSERT INTO users (
     id,
     email,
     password,
     first_name,
-    last_name
+    last_name,
+    nickname,
+    phone
   )
 VALUES (
     uuid_generate_v4(),
     'test2@test.com',
     '7282bc4f49f8c51a710b3f4d442a2dcbe9e71deb0892d56a064f04111d82344d1181f51f5b5fd526fedc26f40798491d67bc441d53dda1f0b85cae4bdf5b588f.2329804b87c05311',
     'John',
-    'Johnson'
+    'Johnson',
+    'Nick',
+    '0000000000'
   );
 -- Setup for products table
 CREATE TABLE products(
