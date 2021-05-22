@@ -1,6 +1,7 @@
-import { db } from '../db/db';
 import { Request, Response, NextFunction } from 'express';
 import { NotAuthorizedError } from '../errors/not-authorized-error';
+import { getRepository } from 'typeorm';
+import { User } from '../entity/User';
 
 export const requireAuth = (
   req: Request,
@@ -16,8 +17,8 @@ export const requireAuth = (
 
   !req.currentUser
     ? throwNotAuthorized()
-    : db
-        .query(`SELECT id FROM users WHERE id = $1`, [req.currentUser?.id])
-        .then(result => (result.rows[0] ? next() : throwNotAuthorized()))
+    : getRepository(User)
+        .findOne(req.currentUser.id)
+        .then(user => (user ? next() : throwNotAuthorized()))
         .catch(err => next(new Error(err.message)));
 };

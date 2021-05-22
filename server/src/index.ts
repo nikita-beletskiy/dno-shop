@@ -1,4 +1,5 @@
-import { db } from './db/db';
+import 'reflect-metadata';
+import { createConnection } from 'typeorm';
 import express from 'express';
 import cookieSession from 'cookie-session';
 
@@ -16,6 +17,7 @@ import { updateAccountRouter } from './routes/user-account/update';
 import { getOneProductRouter } from './routes/products/get-one';
 import { getAllProductsRouter } from './routes/products/get-all';
 import { updateProductsRouter } from './routes/user-account/update-products';
+import { User } from './entity/User';
 
 const app = express();
 
@@ -45,12 +47,16 @@ app.use(errorHandler);
 if (!process.env.JWT_KEY) throw new Error('JWT_KEY must be defined');
 if (!process.env.POSTGRES_URI) throw new Error('POSTGRES_URI must be defined');
 
-db.query(`SELECT state FROM pg_stat_activity WHERE datname = 'dnodb'`)
-  .then(result => {
-    console.log('PostgreSQL status:', result.rows[0]);
-    app.listen(3000, () => {
-      console.log('Listening on port 3000');
-    });
+createConnection({
+  type: 'postgres',
+  url: process.env.POSTGRES_URI,
+  entities: [User],
+  logging: true,
+  synchronize: true
+})
+  .then(() => {
+    console.log('Connected to PostgreSQL!');
+    app.listen(3000, () => console.log('Listening on port 3000'));
   })
   .catch(err => {
     console.log(err);

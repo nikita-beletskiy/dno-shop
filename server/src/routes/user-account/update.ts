@@ -3,6 +3,8 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { body } from 'express-validator';
 import { validateRequest } from '../../middleware/validate-request';
 import { requireAuth } from '../../middleware/require-auth';
+import { User } from '../../entity/User';
+import { getConnection, getRepository } from 'typeorm';
 
 const router = Router();
 router.patch(
@@ -13,20 +15,20 @@ router.patch(
       .optional()
       .isEmail()
       .withMessage(`Nah, to ugly email, yours is better`)
-      .isLength({ max: 100 })
+      .isLength({ max: User.maxEmailLength })
       .withMessage(`Oh come on, you're too complicated...`),
     body('password')
       .optional()
       .trim()
       .isLength({ min: 8 })
       .withMessage(`You shrunk it too much. Let's try set a better password`)
-      .isLength({ max: 128 })
+      .isLength({ max: User.maxPasswordLength })
       .withMessage(`It's too big even for me...`),
     body('first_name')
       .optional()
       .isLength({ min: 2 })
       .withMessage(`Don't get me wrong, but it's too short...`)
-      .isLength({ max: 50 })
+      .isLength({ max: User.maxFirstNameLength })
       .withMessage(
         `Don't think I can memorize this... How about settle on simply John?)`
       )
@@ -36,7 +38,7 @@ router.patch(
       .optional()
       .isLength({ min: 2 })
       .withMessage(`Don't get me wrong, but it's too short...`)
-      .isLength({ max: 50 })
+      .isLength({ max: User.maxLastNameLength })
       .withMessage(`What is it? Unfortunate wedding?`)
       .matches(/^[A-z А-я]+$/, 'g')
       .withMessage('Jeez! Why did you marry a webserver?'),
@@ -44,7 +46,7 @@ router.patch(
       .optional()
       .isLength({ min: 2 })
       .withMessage(`Tooooo simple, even for a nickname`)
-      .isLength({ max: 20 })
+      .isLength({ max: User.maxNicknameLength })
       .withMessage(
         `Nickname is meant to simplify thing, and what are you doing?`
       )
@@ -66,11 +68,13 @@ router.patch(
       async (value, { req, path }) => {
         if (
           (
-            await db.query(
-              `SELECT ${path} FROM users WHERE ${path} = $1 AND id NOT IN ($2)`,
-              [value, req.currentUser.id]
-            )
-          ).rows[0]
+            await getRepository(User)
+              .createQueryBuilder()
+              .select(path)
+              .where(`${path} = :value`, { value })
+              .andWhere('id NOT IN (:id)', { id: req.currentUser.id })
+              .execute()
+          ).length
         )
           throw new Error(
             path === 'email'
@@ -84,22 +88,13 @@ router.patch(
   ],
   validateRequest,
   (req: Request, res: Response, next: NextFunction) => {
-    const columns = Object.keys(req.body)
-      .reduce((params: string[], currentParam) => {
-        params.push(`${currentParam} = '${req.body[currentParam]}'`);
-        return params;
-      }, [])
-      .join();
-
-    db.query(
-      `UPDATE users SET ${columns} WHERE id = $1 RETURNING ${Object.keys(
-        UserColumns
-      )
-        .filter(attr => attr !== UserColumns.password)
-        .join()}`,
-      [req.currentUser?.id]
-    )
-      .then(result => res.send(result.rows[0]))
+    getConnection()
+      .createQueryBuilder()
+      .update<User>(User, { ...req.body })
+      .where('id = :id', { id: req.currentUser!.id })
+      .returning(Object.keys(req.body).filter(key => key !== 'password'))
+      .execute()
+      .then(result => res.send(...result.raw))
       .catch(err => next(new Error(err.message)));
   }
 );

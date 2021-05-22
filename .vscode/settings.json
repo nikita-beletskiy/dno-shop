@@ -5,6 +5,8 @@
     "currentuser",
     "datname",
     "dnodb",
+    "dnoshopapp",
+    "kubectl",
     "ossp",
     "scrypt",
     "signin",
