@@ -1,10 +1,9 @@
-import { db, UserColumns } from '../../db/db';
 import { Router, Request, Response, NextFunction } from 'express';
 import { body } from 'express-validator';
-import { validateRequest } from '../../middleware/validate-request';
-import { requireAuth } from '../../middleware/require-auth';
+import { getRepository } from 'typeorm';
 import { User } from '../../entity/User';
-import { getConnection, getRepository } from 'typeorm';
+import { requireAuth } from '../../middleware/require-auth';
+import { validateRequest } from '../../middleware/validate-request';
 
 const router = Router();
 router.patch(
@@ -65,21 +64,21 @@ router.patch(
   [
     // This validation step involves DB query, so it'll be made only after previous validation steps were completed without issues, which guarantees that the query will be made with 100% valid data so it won't be wasteful
     body(['email', 'nickname', 'phone']).custom(
-      async (value, { req, path }) => {
+      async (value, { req, path: column }) => {
         if (
           (
             await getRepository(User)
               .createQueryBuilder()
-              .select(path)
-              .where(`${path} = :value`, { value })
+              .select(column)
+              .where(`${column} = :value`, { value })
               .andWhere('id NOT IN (:id)', { id: req.currentUser.id })
               .execute()
           ).length
         )
           throw new Error(
-            path === 'email'
+            column === 'email'
               ? `We already have someone with this email. Is it you?`
-              : path === 'nickname'
+              : column === 'nickname'
               ? `Somebody took this already... I'm sorry`
               : `We already have someone with this phone. Is it you?`
           );
@@ -88,7 +87,7 @@ router.patch(
   ],
   validateRequest,
   (req: Request, res: Response, next: NextFunction) => {
-    getConnection()
+    getRepository(User)
       .createQueryBuilder()
       .update<User>(User, { ...req.body })
       .where('id = :id', { id: req.currentUser!.id })

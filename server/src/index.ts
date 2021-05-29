@@ -3,6 +3,9 @@ import { createConnection } from 'typeorm';
 import express from 'express';
 import cookieSession from 'cookie-session';
 
+import { User } from './entity/User';
+import { Product } from './entity/Product';
+
 import { getCurrentUser } from './middleware/get-current-user';
 import { errorHandler } from './middleware/error-handler';
 
@@ -17,7 +20,6 @@ import { updateAccountRouter } from './routes/user-account/update';
 import { getOneProductRouter } from './routes/products/get-one';
 import { getAllProductsRouter } from './routes/products/get-all';
 import { updateProductsRouter } from './routes/user-account/update-products';
-import { User } from './entity/User';
 
 const app = express();
 
@@ -37,9 +39,9 @@ app.use(getOneProductRouter);
 app.use(getAllProductsRouter);
 app.use(updateProductsRouter);
 
-app.all('*', async (req, res, next) => {
-  next(new NotFoundError());
-});
+app.all('*', (req, res, next) =>
+  next(new NotFoundError('Requested route not found'))
+);
 
 // This middleware fires when some error occurs in app. Then it checks whether the error is an instance of BaseCustomErrors abstract class and sends an appropriate response.
 app.use(errorHandler);
@@ -50,7 +52,7 @@ if (!process.env.POSTGRES_URI) throw new Error('POSTGRES_URI must be defined');
 createConnection({
   type: 'postgres',
   url: process.env.POSTGRES_URI,
-  entities: [User],
+  entities: [User, Product],
   logging: true,
   synchronize: true
 })

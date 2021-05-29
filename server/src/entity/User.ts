@@ -2,6 +2,21 @@ import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity({ name: 'users' })
 export class User {
+  constructor() {
+    this.id = '';
+    this.email = '';
+    this.password = '';
+    this.first_name = '';
+    this.last_name = '';
+    this.nickname = '';
+    this.phone = '';
+    this.date_of_birth = '';
+    this.gender = '';
+    this.image = '';
+    this.wishlist = [];
+    this.cart = [];
+  }
+
   static readonly maxEmailLength = 100;
   static readonly maxPasswordLength = 128;
   static readonly maxFirstNameLength = 50;
@@ -9,19 +24,19 @@ export class User {
   static readonly maxNicknameLength = 20;
 
   @PrimaryGeneratedColumn('uuid')
-  id: string | undefined;
+  id: string;
 
   @Column({ type: 'varchar', length: User.maxEmailLength, unique: true })
-  email: string | undefined;
+  email: string;
 
   @Column({ type: 'text' })
-  password: string | undefined;
+  password: string;
 
   @Column({ type: 'varchar', length: User.maxFirstNameLength })
-  first_name: string | undefined;
+  first_name: string;
 
   @Column({ type: 'varchar', length: User.maxLastNameLength })
-  last_name: string | undefined;
+  last_name: string;
 
   @Column({
     type: 'varchar',
@@ -29,25 +44,25 @@ export class User {
     unique: true,
     nullable: true
   })
-  nickname: string | undefined;
+  nickname: string;
 
   @Column({ type: 'varchar', length: 10, unique: true, nullable: true })
-  phone: string | undefined;
+  phone: string;
 
   @Column({ type: 'date', nullable: true })
-  date_of_birth: string | undefined;
+  date_of_birth: string;
 
   @Column({ type: 'varchar', length: 6, nullable: true })
-  gender: string | undefined;
+  gender: string;
 
   @Column({ type: 'text', nullable: true })
-  image: string | undefined;
+  image: string;
 
   @Column({ type: 'uuid', array: true, default: [], nullable: true })
-  wishlist: string[] | undefined;
+  wishlist: string[];
 
   @Column({ type: 'uuid', array: true, default: [], nullable: true })
-  cart: string[] | undefined;
+  cart: string[];
 
   static removePassword(userObj: User) {
     return Object.fromEntries(

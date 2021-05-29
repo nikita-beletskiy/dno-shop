@@ -42,7 +42,7 @@ CREATE TABLE products(
   description TEXT NOT NULL,
   price MONEY NOT NULL,
   images TEXT [],
-  quantity SMALLINT DEFAULT 0
+  quantity SMALLINT DEFAULT 0 NOT NULL
 );
 INSERT INTO products (
     id,
