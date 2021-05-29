@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dno-server-depl
+  annotations:
+    dev.okteto.com/auto-ingress: 'true'
 spec:
   replicas: 1
   selector:
@@ -14,10 +16,13 @@ spec:
     spec:
       containers:
         - name: dno-server
-          image: dnoshopapp/dno-server
+          image: registry.cloud.okteto.net/nikita-beletskiy/dno-server
           env:
             - name: POSTGRES_URI
-              value: 'postgresql://postgres@postgres-srv:5432/dnodb'
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_URI
             - name: JWT_KEY
               valueFrom:
                 secretKeyRef:
