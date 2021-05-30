@@ -9,7 +9,7 @@ router.get('/api/products/all/:category', async (req, res, next) => {
   await getRepository(Product)
     .find({ category: req.params.category })
     .then(products =>
-      products
+      products.length
         ? res.send(products)
         : next(new NotFoundError(`I'm afraid we don't have what you need...`))
     )

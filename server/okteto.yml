@@ -1,0 +1,7 @@
+name: dno-server-depl
+command: sh
+sync:
+- .:/app
+forward:
+- 9229:9229
+- 3000:3000
